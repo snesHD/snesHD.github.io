@@ -1,0 +1,26 @@
+Pos.,Fahrer,Team,Grid,Stopps,Beste,Zeit
+1,PatrickF1Racing,Scuderia Ferrari HP,1,3,"1:06,699","48:15,635",
+2,DrSommer31,Visa Cash App Racing Bulls,13,2,"1:07,015","+1,082",
+3,MarlonBeckemeyer,Alpine,8,2,"1:07,923","+3,081",
+4,martinbuc72,Williams,12,2,"1:07,788","+4,587",
+5,SFRT_cfc_1990,KICK Sauber,5,3,"1:07,675","+5,718",
+6,Kuhregor,Aston Martin,10,3,"1:08,694","+10,767",
+7,KalleMotzig,McLaren,9,3,"1:08,661","+11,111",
+8,Basti361,Visa Cash App Racing Bulls,6,3,"1:07,221","+11,618",
+9,snesHDenes,Haas,4,3,"1:08,364","+12,340",
+10,Waix_BigMac,Williams,14,2,"1:08,547","+17,858",
+11,KevinHSV1996,Mercedes-AMG Petronas,16,3,"1:08,612","+18,913",
+12,Schimpalla,KICK Sauber,2,4,"1:08,402","+22,645",
+13,MrLuke806,Haas,15,2,"1:08,444","+23,385",
+14,Termiinator921,Alpine,18,4,"1:08,346","+26,526",
+15,Nejc_jr,Red Bull,7,2,"1:08,091","+32,761",
+16,Charles_Leclerc3,McLaren,17,5,"1:08,074",+3 Runden,
+17,Galendex00,Red Bull,11,1,"1:08,930",DNF,
+18,KC1FLY,Scuderia Ferrari HP,3,2,"1:08,511",DNF,
+
+Zeit,Runde,Fahrer,Team,Vorfall,Strafe
+"9,337",1,Spieler:in,KICK Sauber,Streckenbegrenzung überschritten,Warnung
+"10,741",1,Spieler:in,Aston Martin,Streckenbegrenzung überschritten,Warnung
+"11,235",1,Spieler:in,Williams,Streckenbegrenzung überschritten,Warnung
+"29,767",1,Spieler:in,Visa Cash App Racing Bulls,Kollision mit Spieler:in,Warnung
+"30,948",1,Termiinator921,Alpine,Kollision mit Spieler:in,Warnung

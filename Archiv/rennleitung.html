@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SRN Rennleitung</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script defer src="js/csv-rennleitung.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Sim Racing Network - Rennleitung</h1>
+    <p>Regelverstöße und Strafen</p>
+  </header>
+
+  <div class="container">
+    <div class="race-card">
+      <h2>Österreich GP - 29.06.2025</h2>
+      <table class="results-table race-control-table">
+        <thead>
+          <tr>
+            <th>Zeit</th>
+            <th>Runde</th>
+            <th>Fahrer</th>
+            <th>Team</th>
+            <th>Vorfall</th>
+            <th>Strafe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6">Bitte CSV-Datei laden...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <label class="file-input-wrapper">
+    📂 CSV wählen
+    <input type="file" id="csvInput" accept=".csv" />
+  </label>
+</body>
+</html>
