@@ -5,37 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SRN Rennergebnis</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
   <script defer src="js/csv-rennergebnis.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script defer>
-    document.addEventListener("DOMContentLoaded", function () {
-      const saveBtn = document.getElementById("saveTable");
-      saveBtn.addEventListener("click", function () {
-        const table = document.querySelector(".race-card");
-        html2canvas(table).then((canvas) => {
-          const link = document.createElement("a");
-          link.download = "rennergebnis.png";
-          link.href = canvas.toDataURL("image/png");
-          link.click();
-        });
-      });
-
-      // Dynamische Seitenleiste aus JSON
-      fetch("data/rennen.json")
-        .then(res => res.json())
-        .then(files => {
-          const list = document.getElementById("rennenList");
-          files.forEach(file => {
-            const li = document.createElement("li");
-            const btn = document.createElement("button");
-            btn.textContent = file.replace(".csv", "").replaceAll("_", " ");
-            btn.onclick = () => ladeCSV(`Ergebnisse/${file}`, file);
-            li.appendChild(btn);
-            list.appendChild(li);
-          });
-        });
-    });
-  </script>
 </head>
 <body>
   <header>
@@ -43,14 +14,14 @@
     <p>Platzierungen und Rundenzeiten</p>
   </header>
 
-  <div class="main-layout">
-    <aside class="sidebar">
+  <div class="page-wrapper">
+    <aside class="rennen-sidebar">
       <h3>Rennen</h3>
       <ul id="rennenList"></ul>
     </aside>
 
     <div class="container">
-      <div class="race-card" id="tableContent">
+      <div class="race-card">
         <h2 id="rennen-title">Renndaten</h2>
         <table class="results-table race-control-table">
           <thead>
@@ -62,9 +33,6 @@
             <tr><td colspan="8">Bitte Rennen wählen...</td></tr>
           </tbody>
         </table>
-      </div>
-      <div style="margin-top: 1rem; text-align: right;">
-        <button id="saveTable">📸 Als PNG speichern</button>
       </div>
     </div>
   </div>
