@@ -1,0 +1,92 @@
+/* ------------------------------
+   Sidebar + Layout
+------------------------------ */
+.page-wrapper {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  flex-wrap: wrap;
+}
+
+.rennen-sidebar {
+  min-width: 220px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: #1b1b1b;
+  border: 2px solid #f2aa00;
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 0 10px rgba(255, 200, 0, 0.2);
+}
+
+.rennen-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.rennen-sidebar::-webkit-scrollbar-thumb {
+  background-color: #f2aa00;
+  border-radius: 3px;
+}
+
+.rennen-sidebar h3 {
+  color: #00aaff;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+#rennenList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#rennenList li {
+  margin-bottom: 0.5rem;
+}
+
+#rennenList li button {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  background: #333;
+  color: #f2aa00;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+}
+
+#rennenList li button:hover {
+  background: #f2aa00;
+  color: #000;
+}
+
+/* ------------------------------
+   Platzierung Farben
+------------------------------ */
+.rank-1 { background: gold; color: black; font-weight: bold; }
+.rank-2 { background: silver; color: black; font-weight: bold; }
+.rank-3 { background: #cd7f32; color: black; font-weight: bold; }
+.rank-4 { background: #3a78ff; color: white; }
+.rank-5 { background: #5591ff; color: white; }
+.rank-6 { background: #6ca3ff; color: white; }
+.rank-7 { background: #84b6ff; color: black; }
+.rank-8 { background: #a0c7ff; color: black; }
+.rank-9 { background: #b5d4ff; color: black; }
+.rank-10 { background: #cce0ff; color: black; }
+.rank-11 { background: #e0ecff; color: black; }
+.rank-12 { background: #f2f7ff; color: black; }
+.rank-13, .rank-14, .rank-15 { background: white; color: black; }
+
+/* ------------------------------
+   Team-Logos
+------------------------------ */
+.team-logo {
+  height: 24px;
+  max-width: 100px;
+  object-fit: contain;
+}

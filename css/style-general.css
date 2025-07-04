@@ -1,5 +1,5 @@
 /* ------------------------------
-   Basislayout & Schrift
+   basislayout & schrift
 ------------------------------ */
 body {
   margin: 0;
@@ -20,7 +20,7 @@ p {
 }
 
 /* ------------------------------
-   Header-Bereich
+   header-bereich
 ------------------------------ */
 header {
   background: #101820;
@@ -31,7 +31,7 @@ header {
 }
 
 /* ------------------------------
-   Container & Karten
+   container & karten
 ------------------------------ */
 .container {
   padding: 2rem 0;
@@ -58,7 +58,7 @@ header {
 }
 
 /* ------------------------------
-   Tabellen-Stil
+   tabellen-stil
 ------------------------------ */
 .results-table {
   width: 100%;
@@ -90,7 +90,33 @@ header {
 }
 
 /* ------------------------------
-   Datei-Auswahl Button
+   team-logos
+------------------------------ */
+.team-logo {
+  height: 24px;
+  max-width: 100px;
+  object-fit: contain;
+}
+
+/* ------------------------------
+   platzierung farben
+------------------------------ */
+.rank-1 { background: gold; color: black; font-weight: bold; }
+.rank-2 { background: silver; color: black; font-weight: bold; }
+.rank-3 { background: #cd7f32; color: black; font-weight: bold; }
+.rank-4 { background: #3a78ff; color: white; }
+.rank-5 { background: #5591ff; color: white; }
+.rank-6 { background: #6ca3ff; color: white; }
+.rank-7 { background: #84b6ff; color: black; }
+.rank-8 { background: #a0c7ff; color: black; }
+.rank-9 { background: #b5d4ff; color: black; }
+.rank-10 { background: #cce0ff; color: black; }
+.rank-11 { background: #e0ecff; color: black; }
+.rank-12 { background: #f2f7ff; color: black; }
+.rank-13, .rank-14, .rank-15 { background: white; color: black; }
+
+/* ------------------------------
+   datei-auswahl button
 ------------------------------ */
 .file-input-wrapper {
   position: fixed;
@@ -109,7 +135,7 @@ header {
 }
 
 /* ------------------------------
-   Startseite (index.html)
+   startseite (index.html)
 ------------------------------ */
 .center-content {
   display: flex;
@@ -145,7 +171,7 @@ header {
 }
 
 /* ------------------------------
-   Responsive Anpassungen
+   responsive anpassungen
 ------------------------------ */
 @media (max-width: 768px) {
   .race-card h2 {
@@ -173,4 +199,3 @@ header {
     margin-bottom: 1rem;
   }
 }
-
