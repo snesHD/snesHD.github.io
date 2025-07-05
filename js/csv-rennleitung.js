@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const fileInput = document.getElementById("csvInput");
   const tbody = document.querySelector(".race-control-table tbody");
   const rennenList = document.getElementById("rennenList");
+  const titleEl = document.getElementById("rennen-title"); // optional für Titelüberschrift
 
   // Rennen aus JSON laden
   fetch("data/rennen.json")
@@ -17,63 +17,56 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-  // Lokale Datei laden (manueller Upload)
-  fileInput.addEventListener("change", function () {
-    if (fileInput.files.length === 0) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const csv = e.target.result;
-      parseUndZeigeCSV(csv);
-    };
-
-    reader.readAsText(fileInput.files[0]);
-  });
-
-  // CSV von Server laden (aus der Liste)
   function ladeRennen(filePath) {
     fetch(filePath)
       .then(res => res.text())
       .then(csv => {
-        parseUndZeigeCSV(csv);
+        const rows = csv.split(/\r?\n/);
+        tbody.innerHTML = "";
+
+        let foundHeader = false;
+
+        // Titel (optional)
+        if (titleEl) {
+          const fileName = filePath.split("/").pop().replace(".csv", "");
+          const parts = fileName.split("_");
+          if (parts.length === 2) {
+            const strecke = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+            titleEl.textContent = `${strecke} GP – ${parts[1].replaceAll(".", ".")}`;
+          } else {
+            titleEl.textContent = fileName;
+          }
+        }
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i].trim();
+
+          if (
+            !foundHeader &&
+            row.toLowerCase().includes("runde") &&
+            row.toLowerCase().includes("fahrer") &&
+            row.toLowerCase().includes("strafe")
+          ) {
+            foundHeader = true;
+            continue;
+          }
+
+          if (!foundHeader || row === "") continue;
+
+          const values = row
+            .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+            .map((v) => v.replace(/^"|"$/g, ""));
+
+          if (values.length >= 6) {
+            const [zeit, runde, fahrer, team, vorfall, strafe] = values;
+            const teamImg = `<img src="Teams/${team}.png" alt="${team}" class="team-logo">`;
+            tbody.innerHTML += `<tr><td>${zeit}</td><td>${runde}</td><td>${fahrer}</td><td>${teamImg}</td><td>${vorfall}</td><td>${strafe}</td></tr>`;
+          }
+        }
+
+        if (!foundHeader) {
+          tbody.innerHTML = '<tr><td colspan="6">Keine Rennleitungsdaten gefunden.</td></tr>';
+        }
       });
-  }
-
-  // Gemeinsame Funktion zur Anzeige der Tabelle
-  function parseUndZeigeCSV(csv) {
-    const rows = csv.split(/\r?\n/);
-    tbody.innerHTML = "";
-
-    let foundHeader = false;
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i].trim();
-
-      if (
-        !foundHeader &&
-        row.toLowerCase().includes("runde") &&
-        row.toLowerCase().includes("fahrer") &&
-        row.toLowerCase().includes("strafe")
-      ) {
-        foundHeader = true;
-        continue;
-      }
-
-      if (!foundHeader || row === "") continue;
-
-      const values = row
-        .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-        .map((v) => v.replace(/^"|"$/g, ""));
-
-      if (values.length >= 6) {
-        const [zeit, runde, fahrer, team, vorfall, strafe] = values;
-        const teamImg = `<img src="Teams/${team}.png" alt="${team}" class="team-logo">`;
-        tbody.innerHTML += `<tr><td>${zeit}</td><td>${runde}</td><td>${fahrer}</td><td>${teamImg}</td><td>${vorfall}</td><td>${strafe}</td></tr>`;
-      }
-    }
-
-    if (!foundHeader) {
-      tbody.innerHTML = '<tr><td colspan="6">Keine Rennleitungsdaten gefunden.</td></tr>';
-    }
   }
 });
