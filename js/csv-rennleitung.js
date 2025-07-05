@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const tbody = document.querySelector(".race-control-table tbody");
   const rennenList = document.getElementById("rennenList");
-  const titleEl = document.getElementById("rennen-title"); // optional für Titelüberschrift
+  const titleEl = document.getElementById("rennen-title");
 
   // Rennen aus JSON laden
   fetch("data/rennen.json")
@@ -25,19 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
         tbody.innerHTML = "";
 
         let foundHeader = false;
-
-        // Titel (optional)
-        if (titleEl) {
-          const fileName = filePath.split("/").pop().replace(".csv", "");
-          const parts = fileName.split("_");
-          if (parts.length === 2) {
-            const strecke = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-            titleEl.textContent = `${strecke} GP – ${parts[1].replaceAll(".", ".")}`;
-          } else {
-            titleEl.textContent = fileName;
-          }
-        }
-
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i].trim();
 
@@ -65,7 +52,20 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (!foundHeader) {
-          tbody.innerHTML = '<tr><td colspan="6">Keine Rennleitungsdaten gefunden.</td></tr>';
+          tbody.innerHTML =
+            '<tr><td colspan="6">Keine Rennleitungsdaten gefunden.</td></tr>';
+        }
+
+        // Titel setzen (optional)
+        if (titleEl) {
+          const fileName = filePath.split("/").pop().replace(".csv", "");
+          const parts = fileName.split("_");
+          if (parts.length === 2) {
+            const strecke = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+            titleEl.textContent = `${strecke} GP – ${parts[1]}`;
+          } else {
+            titleEl.textContent = fileName;
+          }
         }
       });
   }
