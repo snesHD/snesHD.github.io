@@ -58,15 +58,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
   }
-
-  // PNG-Export
-  document.getElementById("saveTable").addEventListener("click", () => {
-    const target = document.getElementById("tableContent");
-    html2canvas(target).then(canvas => {
-      const a = document.createElement("a");
-      a.download = "rennergebnis.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    });
-  });
 });
