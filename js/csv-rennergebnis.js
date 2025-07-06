@@ -49,8 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dataset2IndexStart = rows.findIndex(row => row.length == 0)
 
-        const leaderboard = rows.splice(0, dataset2IndexStart - 1)
-        const raceManagment = rows.splice(2, rows.length - 3)
+        const leaderboard = rows.splice(0, dataset2IndexStart)
+        const raceManagment = rows.splice(3, rows.length - 3)
 
         const punkteTabelle = [25, 22, 19, 16, 14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
 
