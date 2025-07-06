@@ -52,23 +52,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const leaderboard = rows.splice(0, dataset2IndexStart - 1)
         const raceManagment = rows.splice(2, rows.length - 3)
 
+        const punkteTabelle = [25, 22, 19, 16, 14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
+
         const data = {
           leaderboard: csvToJson(leaderboard),
           raceManagment: csvToJson(raceManagment)
         }
+
+        data.leaderboard.forEach((val, index) => val["Pkt."] = punkteTabelle[index] || 0)
 
         tableBody.innerHTML = "";
         data.leaderboard.forEach(r => {
           const teamImg = `<img src="Teams/${r.Team}.png" alt="${r.Team}" class="team-logo">`;
           tableBody.innerHTML += `<tr><td class="rank-${r["Pos."]}">${r["Pos."]}</td><td>${r.Fahrer}</td><td>${teamImg}</td><td>${r.Grid}</td><td>${r.Stopps}</td><td>${r.Beste}</td><td>${r.Zeit}</td><td>${r["Pkt."]}</td></tr>`;
         })
-
-
-
-      //   const rows = csv.split(/\r?\n/);
-      //   const punkteTabelle = [25, 22, 19, 16, 14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
-      //   let foundHeader = false;
-      //   tableBody.innerHTML = "";
 
         // Titel setzen
         const fileName = filePath.split("/").pop().replace(".csv", "");
@@ -79,27 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           titleEl.textContent = fileName;
         }
-
-      //   for (const row of rows) {
-      //     const clean = row.trim();
-      //     if (!foundHeader && clean.toLowerCase().includes("pos") && clean.toLowerCase().includes("fahrer")) {
-      //       foundHeader = true;
-      //       continue;
-      //     }
-      //     if (!foundHeader || clean === "") continue;
-
-      //     const values = clean.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, ""));
-      //     if (values.length >= 8) {
-      //       const [pos, fahrer, team, grid, stopps, beste, zeit] = values;
-      //       const punkte = punkteTabelle[parseInt(pos) - 1] || 0;
-      //       const teamImg = `<img src="Teams/${team}.png" alt="${team}" class="team-logo">`;
-      //       tableBody.innerHTML += `<tr><td class="rank-${pos}">${pos}</td><td>${fahrer}</td><td>${teamImg}</td><td>${grid}</td><td>${stopps}</td><td>${beste}</td><td>${zeit}</td><td>${punkte}</td></tr>`;
-      //     }
-      //   }
-
-      //   if (!foundHeader) {
-      //     tableBody.innerHTML = '<tr><td colspan="8">Keine Ergebnisdaten gefunden.</td></tr>';
-      //   }
       });
   }
 });
