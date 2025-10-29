@@ -1,77 +1,33 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SRN Rennergebnis</title>
-
-  <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-
-  <!-- Orbitron Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Eigene Styles -->
   <style>
-    body {
-      background-color: #0d1117;
-      color: #ffffff;
-      font-family: 'Orbitron', sans-serif;
-    }
-
-    header {
-      background-color: #000;
-      border-bottom: 2px solid #ffc107;
-    }
-
-    h1, h2 {
-      letter-spacing: 1px;
-    }
-
-    .card {
-      background-color: #1a1f25;
-      border: 1px solid #ffc107;
-      box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-    }
-
-    .results-table td img {
-      height: 20px;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-
-    .results-table td:nth-child(3) {
-      text-align: left;
-    }
+    body { background:#0d1117; color:#fff; }
+    header { background:#000; border-bottom:2px solid #ffc107; }
+    .card { background:#1a1f25; border:1px solid #ffc107; }
+    .results-table td img { height:20px; vertical-align:middle; margin-right:6px; }
+    .results-table td:nth-child(3) { text-align:left; }
   </style>
-
-  <!-- Script -->
-  <script defer src="js/csv-rennergebnisV2.js"></script>
 </head>
-
 <body class="bg-dark text-white d-flex flex-column vh-100">
-
-  <!-- Header -->
   <header class="text-center py-3">
     <h1 class="text-warning">Sim Racing Network - Rennergebnis</h1>
     <p class="fs-5">Platzierungen und Teams</p>
   </header>
 
-  <!-- Hauptinhalt -->
   <main class="flex-grow-1 overflow-hidden">
     <div class="container-fluid h-100 py-3">
       <div class="row h-100">
-
-        <!-- Hauptinhalt (rechte Tabelle) -->
         <div class="col-12 h-100">
           <div class="card text-white shadow h-100 overflow-auto">
             <div class="card-body d-flex flex-column">
               <h2 id="rennen-title" class="text-info text-center mb-3">Rennergebnis</h2>
-
               <div class="table-responsive flex-grow-1">
-                <table
-                  class="table table-dark table-bordered table-striped text-center align-middle results-table race-control-table mb-0">
+                <table class="table table-dark table-bordered table-striped text-center align-middle results-table mb-0">
                   <thead>
                     <tr>
                       <th>Pos</th>
@@ -85,21 +41,118 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td colspan="8">Rennergebnis wird geladen...</td>
-                    </tr>
+                    <tr><td colspan="8">Rennergebnis wird geladen…</td></tr>
                   </tbody>
                 </table>
               </div>
-
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </main>
 
-</body>
+<script>
+  // === Deine veröffentlichte CSV-URL (aus deinem pubhtml-Link abgeleitet) ===
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvZNCfnebfXU_g03bJTk7T6oipiGCT6qEyY9CV9TgDyH0i-qozWaoAxVVW_W8zs5giE32BOivxFYXM/pub?gid=150040148&single=true&output=csv";
 
+  // Bereich der Fahrerzeilen (inklusive)
+  const DATA_START_ROW = 4;   // erste Fahrerzeile
+  const DATA_END_ROW   = 23;  // letzte Fahrerzeile
+
+  // Spaltenindizes (0-basiert) – A=0, ..., Z=25, AA=26, ...
+  const COLS = {
+    pos:  33, // AH
+    name: 35, // AJ
+    team: 36, // AK
+    logo: 37, // AL
+    pts:  39  // AN
+  };
+
+  // CSV in Array<Array<string>> parsen (einfach & robust)
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], cur = "", inQuotes = false;
+    for (let i=0; i<text.length; i++) {
+      const ch = text[i], next = text[i+1];
+      if (ch === '"') {
+        if (inQuotes && next === '"') { cur += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        row.push(cur); cur = "";
+      } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+        if (cur !== "" || row.length) { row.push(cur); rows.push(row); row = []; cur=""; }
+        // handle \r\n as one
+        if (ch === '\r' && next === '\n') i++;
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  function extractImageUrl(val){
+    if (!val) return "";
+    const m = String(val).match(/https?:\/\/[^\s")]+/);
+    return m ? m[0] : "";
+  }
+
+  async function loadRaceCSV(){
+    const tbody = document.querySelector(".results-table tbody");
+    tbody.innerHTML = `<tr><td colspan="8">Lade Rennergebnis…</td></tr>`;
+    try {
+      const res = await fetch(CSV_URL);
+      if (!res.ok) throw new Error("CSV fetch failed: " + res.status);
+      const text = await res.text();
+      const rows = parseCSV(text);
+
+      tbody.innerHTML = "";
+
+      // CSV-Zeilen sind 1-basiert; wir mappen auf 0-basierte Indizes
+      const startIdx = DATA_START_ROW - 1;
+      const endIdx   = DATA_END_ROW - 1;
+
+      for (let r = startIdx; r <= endIdx && r < rows.length; r++) {
+        const row = rows[r] || [];
+        const pos  = row[COLS.pos]  || "";
+        const name = row[COLS.name] || "";
+        const team = row[COLS.team] || "";
+        const logo = row[COLS.logo] || "";
+        const pts  = row[COLS.pts]  || "";
+
+        if (!name && !team && !pts) continue; // leere Zeilen skippen
+
+        let teamCell = team;
+        const logoUrl = extractImageUrl(logo);
+        if (logoUrl) {
+          teamCell = `<img src="${logoUrl}" alt="" />${teamCell}`;
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pos}</td>
+          <td>${name}</td>
+          <td>${teamCell}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>${pts}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      if (!tbody.children.length) {
+        tbody.innerHTML = `<tr><td colspan="8">Keine Ergebnisdaten im angegebenen Bereich gefunden.</td></tr>`;
+      }
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="8">Fehler: ${err.message}</td></tr>`;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadRaceCSV);
+</script>
+</body>
 </html>
