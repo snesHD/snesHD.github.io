@@ -1,102 +1,144 @@
-/*********************
- * CONFIG (veröffentlichter Link)
- *********************/
-const PUBLISHED_E_ID = "2PACX-1vTvZNCfnebfXU_g03bJTk7T6oipiGCT6qEyY9CV9TgDyH0i-qozWaoAxVVW_W8zs5giE32BOivxFYXM";
-const GID            = "150040148";   // aus deinem pubhtml-Link: ?gid=150040148
+/******** CONFIG ********/
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvZNCfnebfXU_g03bJTk7T6oipiGCT6qEyY9CV9TgDyH0i-qozWaoAxVVW_W8zs5giE32BOivxFYXM/pub?gid=150040148&single=true&output=csv";
 
-// Datenbereich (rechte Ergebnistabelle)
-const DATA_START_ROW = 4;   // erste Fahrerzeile (inkl.)
-const DATA_END_ROW   = 23;  // letzte Fahrerzeile (inkl.)
+// so viele Zeilen durchsuchen wir nach der Kopfzeile mit "Rennen"
+const HEADER_SCAN_ROWS = 30;
 
-// Spaltenindizes (A=0, ..., Z=25, AA=26, ...):
-const COLS = {
-  pos:   33,  // AH
-  name:  35,  // AJ
-  team:  36,  // AK
-  logo:  37,  // AL (URL/IMAGE)
-  pts:   39   // AN
-};
+// so viele Fahrerzeilen rendern (F1: 20)
+const DRIVER_ROWS = 20;
 
-/*********************
- * GViz JSONP Loader (CORS-frei)
- *********************/
-function fetchGvizPublished(eId, gid) {
-  return new Promise((resolve, reject) => {
-    const old = (window.google && window.google.visualization && window.google.visualization.Query && window.google.visualization.Query.setResponse) || null;
-
-    window.google = window.google || {};
-    window.google.visualization = window.google.visualization || {};
-    window.google.visualization.Query = window.google.visualization.Query || {};
-
-    window.google.visualization.Query.setResponse = function(resp) {
-      try {
-        if (!resp || resp.status !== "ok") throw new Error("GViz response not ok");
-        resolve(resp.table);
-      } catch (e) {
-        reject(e);
-      } finally {
-        if (old) window.google.visualization.Query.setResponse = old;
-        if (script && script.parentNode) script.parentNode.removeChild(script);
-      }
-    };
-
-    const url = `https://docs.google.com/spreadsheets/d/e/${eId}/gviz/tq?gid=${encodeURIComponent(gid)}&tqx=out:json`;
-    const script = document.createElement("script");
-    script.src = url;
-    script.onerror = () => reject(new Error("GViz JSONP load failed"));
-    document.body.appendChild(script);
-  });
+/******** CSV Parser (robust mit Quotes/Kommas/CRLF) ********/
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cur = "", inQuotes = false;
+  for (let i=0; i<text.length; i++) {
+    const ch = text[i], next = text[i+1];
+    if (ch === '"') {
+      if (inQuotes && next === '"') { cur += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      row.push(cur); cur = "";
+    } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+      if (cur !== "" || row.length) { row.push(cur); rows.push(row); row = []; cur=""; }
+      if (ch === '\r' && next === '\n') i++;
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+  return rows;
 }
 
-/*********************
- * Helpers
- *********************/
-function raw(c){ return c?.v ?? ""; }
-function fmt(c){ return c?.f ?? c?.v ?? ""; } // versucht formatierte Werte zu nutzen
+/******** Helpers ********/
+const norm = s => String(s ?? "").trim();
+function findFirstRowIndex(rows, pred, maxRows=HEADER_SCAN_ROWS) {
+  for (let r = 0; r < Math.min(rows.length, maxRows); r++) {
+    if (pred(rows[r] || [], r)) return r;
+  }
+  return -1;
+}
+function findCol(row, label) {
+  const needle = label.toLowerCase();
+  for (let c = 0; c < row.length; c++) {
+    if (norm(row[c]).toLowerCase() === needle) return c;
+  }
+  return -1;
+}
+function extractImageUrl(val){
+  if (!val) return "";
+  const m = String(val).match(/https?:\/\/[^\s")]+/);
+  return m ? m[0] : "";
+}
 
-/*********************
- * Render
- *********************/
-async function loadRaceOnly() {
-  const table = await fetchGvizPublished(PUBLISHED_E_ID, GID);
+/******** Auto-Lokalisierung der „Rennen“-Sektion ********/
+function detectRaceColumns(rows) {
+  // 1) Zeile finden, die die Zelle "Rennen" enthält (irgendwo in den ersten N Zeilen)
+  const rennenHeaderRowIdx = findFirstRowIndex(rows, (row) => row.some(cell => norm(cell) === "Rennen"));
+  if (rennenHeaderRowIdx === -1) throw new Error("Konnte die 'Rennen'-Sektion in den Kopfzeilen nicht finden.");
+
+  // 2) In der gleichen Zeile ODER in der nächsten Zeile nach Spaltenüberschriften suchen
+  //    (manchmal stehen die Unterüberschriften eine Zeile tiefer)
+  const candidateRows = [rows[rennenHeaderRowIdx], rows[rennenHeaderRowIdx + 1] || []];
+
+  let rowIdxForLabels = -1, cRang=-1, cFahrer=-1, cKonstrukteur=-1, cPunkte=-1;
+  for (let k = 0; k < candidateRows.length; k++) {
+    const row = candidateRows[k] || [];
+    cRang         = findCol(row, "Rang");
+    cFahrer       = findCol(row, "Fahrer");
+    cKonstrukteur = findCol(row, "Konstrukteur");
+    cPunkte       = findCol(row, "Punkte");
+    if (cFahrer !== -1 && cKonstrukteur !== -1) { rowIdxForLabels = rennenHeaderRowIdx + k; break; }
+  }
+  if (rowIdxForLabels === -1) {
+    throw new Error("Konnte die Spalten 'Fahrer'/'Konstrukteur' nicht lokalisieren.");
+  }
+
+  // 3) Optional: Logo = Spalte direkt rechts von "Konstrukteur", wenn diese Zellen wie IMAGE/URL aussehen
+  let cLogo = cKonstrukteur + 1;
+
+  return {
+    headerRow: rowIdxForLabels,
+    cols: { rang: cRang, fahrer: cFahrer, konstrukteur: cKonstrukteur, logo: cLogo, punkte: cPunkte }
+  };
+}
+
+/******** Render ********/
+async function loadRaceCSV() {
   const tbody = document.querySelector(".results-table tbody");
-  tbody.innerHTML = "";
+  tbody.innerHTML = `<tr><td colspan="8">Lade Rennergebnis…</td></tr>`;
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error("CSV fetch failed: " + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
 
-  for (let r = DATA_START_ROW - 1; r <= DATA_END_ROW - 1; r++) {
-    const row = table.rows[r];
-    if (!row) continue;
-    const c = row.c || [];
+    // Spalten dynamisch anhand der „Rennen“-Sektion ermitteln
+    const { headerRow, cols } = detectRaceColumns(rows);
 
-    const pos  = fmt(c[COLS.pos]);
-    const name = fmt(c[COLS.name]);
-    const team = fmt(c[COLS.team]);
-    const logo = fmt(c[COLS.logo]); // URL oder leer
-    const pts  = fmt(c[COLS.pts]);
+    // Daten beginnen i. d. R. 1–2 Zeilen unter den Labels; hier: nächste Zeile
+    const firstDataRow = headerRow + 1;
 
-    if (!name && !team && !pts) continue; // leere Zeilen überspringen
+    tbody.innerHTML = "";
+    let rendered = 0;
 
-    // Team + Logo zusammenbauen (Logo optional)
-    let teamCell = team || "";
-    if (logo) {
-      // wenn die Zelle eine IMAGE()-Formel als Text liefert, URL herausziehen
-      const urlMatch = String(logo).match(/https?:\/\/[^\s")]+/);
-      const url = urlMatch ? urlMatch[0] : logo;
-      teamCell = `<img src="${url}" alt="" style="height:18px;vertical-align:middle;margin-right:6px;">${teamCell}`;
+    for (let r = firstDataRow; r < rows.length && rendered < DRIVER_ROWS; r++) {
+      const row = rows[r] || [];
+      const name = norm(row[cols.fahrer]);
+      const team = norm(row[cols.konstrukteur]);
+      const punkte = norm(row[cols.punkte]);
+      // akzeptiere nur „echte“ Fahrerzeilen: Fahrer oder Team vorhanden
+      if (!name && !team && !punkte) continue;
+
+      const rang = cols.rang !== -1 ? norm(row[cols.rang]) : "";
+      let teamCell = team;
+      // Logo, falls direkt rechts neben „Konstrukteur“
+      if (cols.logo > -1 && row[cols.logo]) {
+        const logoUrl = extractImageUrl(row[cols.logo]);
+        if (logoUrl) teamCell = `<img src="${logoUrl}" alt="" style="height:18px;vertical-align:middle;margin-right:6px;">${teamCell}`;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${rang}</td>
+        <td>${name}</td>
+        <td>${teamCell}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>${punkte}</td>
+      `;
+      tbody.appendChild(tr);
+      rendered++;
     }
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${pos}</td>
-      <td>${name}</td>
-      <td>${teamCell}</td>
-      <td></td>  <!-- Grid (optional) -->
-      <td></td>  <!-- Stopps (optional) -->
-      <td></td>  <!-- Beste (optional) -->
-      <td></td>  <!-- Zeit  (optional) -->
-      <td>${pts}</td>
-    `;
-    tbody.appendChild(tr);
+    if (!rendered) {
+      tbody.innerHTML = `<tr><td colspan="8">Keine Ergebnisdaten unter 'Rennen' gefunden.</td></tr>`;
+    }
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="8">Fehler: ${err.message}</td></tr>`;
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadRaceOnly);
+document.addEventListener("DOMContentLoaded", loadRaceCSV);
