@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>F1 ELO Kalkulator</title>
+  <!-- Optional: Bootstrap für etwas Grundlayout -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+</head>
+<body class="bg-light">
+  <div class="container my-5">
+    <h1 class="mb-4">F1 ELO Kalkulator (Demo)</h1>
+    <p class="text-muted">
+      Dieses Tool berechnet das neue ELO-Rating für einen Fahrer basierend auf
+      einem Rennen. Es speichert nichts – reiner Tutorial-/Testlauf.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Eingaben</h5>
+
+        <!-- Lobby / Allgemein -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Anzahl Fahrer im Rennen (N)</label>
+            <input type="number" id="numDrivers" class="form-control" value="20" min="2">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Altes Rating des Fahrers (R_alt)</label>
+            <input type="number" id="ratingOld" class="form-control" value="1000">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Durchschnitts-Rating der Lobby (R_avg)</label>
+            <input type="number" id="ratingAvg" class="form-control" value="1000">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">K-Faktor (Aggressivität)</label>
+            <input type="number" id="kFactor" class="form-control" value="24" min="1">
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Quali -->
+        <h6>Qualifying</h6>
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Quali-Position (P_q)</label>
+            <input type="number" id="qualiPos" class="form-control" value="5" min="1">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Eigene Quali-Zeit (Sekunden)</label>
+            <input type="number" step="0.001" id="qualiTime" class="form-control" value="86.900">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Pole-Zeit der Lobby (Sekunden)</label>
+            <input type="number" step="0.001" id="qualiPoleTime" class="form-control" value="86.100">
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Rennen -->
+        <h6>Rennen</h6>
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Renn-Position (P_r)</label>
+            <input type="number" id="racePos" class="form-control" value="7" min="1">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Eigene beste Rennrunde (Sekunden)</label>
+            <input type="number" step="0.001" id="raceBestLap" class="form-control" value="88.200">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Schnellste Rennrunde der Lobby (Sekunden)</label>
+            <input type="number" step="0.001" id="raceBestLapLobby" class="form-control" value="87.800">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <div class="form-check mt-4">
+              <input class="form-check-input" type="checkbox" id="hasFastestLap">
+              <label class="form-check-label" for="hasFastestLap">
+                Fahrer hat die schnellste Rennrunde (Fastest Lap)
+              </label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Gesamt-Strafzeit (Sekunden)</label>
+            <input type="number" step="0.1" id="penalties" class="form-control" value="0">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="calculateElo()">ELO berechnen</button>
+      </div>
+    </div>
+
+    <div id="resultCard" class="card d-none">
+      <div class="card-body">
+        <h5 class="card-title">Ergebnis</h5>
+        <p class="mb-2">
+          <strong>Altes Rating:</strong> <span id="outRatingOld"></span><br>
+          <strong>Neues Rating:</strong> <span id="outRatingNew"></span><br>
+          <strong>Delta:</strong> <span id="outRatingDelta"></span>
+        </p>
+        <hr>
+        <h6>Details</h6>
+        <ul class="mb-1">
+          <li>Quali-Positions-Score: <span id="outScoreQPos"></span></li>
+          <li>Quali-Zeit-Score: <span id="outScoreQTime"></span></li>
+          <li>Renn-Positions-Score: <span id="outScoreRacePos"></span></li>
+          <li>Renn-Pace-Score (beste Runde): <span id="outScoreRaceLap"></span></li>
+          <li>Fastest-Lap-Bonus: <span id="outScoreFL"></span></li>
+          <li>Roh-S (ohne Strafen): <span id="outScoreRaw"></span></li>
+          <li>Straf-Faktor: <span id="outPenaltyFactor"></span></li>
+          <li>Finales S (mit Strafen): <span id="outScoreFinal"></span></li>
+          <li>Erwartungswert E: <span id="outExpected"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function calculateElo() {
+      // Eingaben holen
+      const N = parseInt(document.getElementById('numDrivers').value, 10);
+      const R_old = parseFloat(document.getElementById('ratingOld').value);
+      const R_avg = parseFloat(document.getElementById('ratingAvg').value);
+      const K = parseFloat(document.getElementById('kFactor').value);
+
+      const P_q = parseInt(document.getElementById('qualiPos').value, 10);
+      const T_q = parseFloat(document.getElementById('qualiTime').value);
+      const T_q_pole = parseFloat(document.getElementById('qualiPoleTime').value);
+
+      const P_r = parseInt(document.getElementById('racePos').value, 10);
+      const T_r_best = parseFloat(document.getElementById('raceBestLap').value);
+      const T_r_best_lobby = parseFloat(document.getElementById('raceBestLapLobby').value);
+
+      const hasFL = document.getElementById('hasFastestLap').checked;
+      const penalties = parseFloat(document.getElementById('penalties').value) || 0;
+
+      if (N < 2) {
+        alert("Die Anzahl der Fahrer (N) muss mindestens 2 sein.");
+        return;
+      }
+
+      // 1) Scores berechnen
+
+      // Quali-Positions-Score
+      const S_qpos = (N - P_q) / (N - 1);
+
+      // Quali-Zeit-Score
+      const deltaQ = T_q - T_q_pole;
+      let S_qtime = 1 - (deltaQ / 2.0);
+      if (S_qtime < 0) S_qtime = 0;
+      if (S_qtime > 1) S_qtime = 1;
+
+      // Renn-Positions-Score
+      const S_rpos = (N - P_r) / (N - 1);
+
+      // Renn-Pace-Score (beste Runde)
+      const deltaLap = T_r_best - T_r_best_lobby;
+      let S_rlap = 1 - (deltaLap / 2.0);
+      if (S_rlap < 0) S_rlap = 0;
+      if (S_rlap > 1) S_rlap = 1;
+
+      // Fastest-Lap Bonus
+      const S_fl = hasFL ? 1 : 0;
+
+      // Gewichtung:
+      // Rennen 50%, Quali-Pos 15%, Quali-Zeit 10%, Rennpace 15%, Fastest Lap 10%
+      const S_raw =
+        0.50 * S_rpos +
+        0.15 * S_qpos +
+        0.10 * S_qtime +
+        0.15 * S_rlap +
+        0.10 * S_fl;
+
+      // Straf-Faktor
+      // alle 3 Sekunden Strafe = -0,02, Minimum 0,7
+      let F_pen = 1 - (0.02 * (penalties / 3.0));
+      if (F_pen < 0.7) F_pen = 0.7;
+
+      const S_final = S_raw * F_pen;
+
+      // Erwartungswert E (klassische Elo-Formel)
+      const exponent = (R_avg - R_old) / 400.0;
+      const E = 1 / (1 + Math.pow(10, exponent));
+
+      // Neues Rating
+      const R_new = R_old + K * (S_final - E);
+      const deltaR = R_new - R_old;
+
+      // Ausgabe
+      document.getElementById('outRatingOld').textContent = R_old.toFixed(1);
+      document.getElementById('outRatingNew').textContent = R_new.toFixed(1);
+      document.getElementById('outRatingDelta').textContent =
+        (deltaR >= 0 ? "+" : "") + deltaR.toFixed(1);
+
+      document.getElementById('outScoreQPos').textContent = S_qpos.toFixed(3);
+      document.getElementById('outScoreQTime').textContent = S_qtime.toFixed(3);
+      document.getElementById('outScoreRacePos').textContent = S_rpos.toFixed(3);
+      document.getElementById('outScoreRaceLap').textContent = S_rlap.toFixed(3);
+      document.getElementById('outScoreFL').textContent = S_fl.toFixed(3);
+      document.getElementById('outScoreRaw').textContent = S_raw.toFixed(3);
+      document.getElementById('outPenaltyFactor').textContent = F_pen.toFixed(3);
+      document.getElementById('outScoreFinal').textContent = S_final.toFixed(3);
+      document.getElementById('outExpected').textContent = E.toFixed(3);
+
+      document.getElementById('resultCard').classList.remove('d-none');
+    }
+  </script>
+</body>
+</html>
